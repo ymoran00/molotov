@@ -10,8 +10,6 @@ import functools
 from collections import namedtuple
 from http.client import HTTPConnection
 from io import StringIO
-import http.server
-import socketserver
 import pytest
 from queue import Empty
 from unittest.mock import patch
@@ -25,7 +23,7 @@ from molotov.run import PYPY
 from molotov.session import LoggedClientRequest, LoggedClientResponse
 from molotov.sharedconsole import SharedConsole
 from molotov.sharedcounter import SharedCounters
-
+from molotov.tests.server import run as _run_server
 
 HERE = os.path.dirname(__file__)
 
@@ -49,51 +47,12 @@ async def serialize(console):
     return ''.join(res)
 
 
-class HandlerRedirect(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == "/redirect":
-            self.send_response(302)
-            self.send_header('Location', '/')
-            self.end_headers()
-            return
-        if self.path == "/slow":
-            try:
-                time.sleep(5)
-                self.send_response(200)
-                self.end_headers()
-            except SystemExit:
-                pass
-            return
-        return super(HandlerRedirect, self).do_GET()
-
-
 def run_server(port=8888):
     """Running in a subprocess to avoid any interference
     """
     def _run():
         os.chdir(HERE)
-        socketserver.TCPServer.allow_reuse_address = True
-        attempts = 0
-        httpd = None
-
-        while attempts < 3:
-            try:
-                httpd = socketserver.TCPServer(("", port), HandlerRedirect)
-                break
-            except Exception:
-                attempts += 1
-                time.sleep(.1)
-
-        if httpd is None:
-            raise OSError("Could not start the coserver")
-
-        def _shutdown(*args, **kw):
-            httpd.server_close()
-            sys.exit(0)
-
-        signal.signal(signal.SIGTERM, _shutdown)
-        signal.signal(signal.SIGINT, _shutdown)
-        httpd.serve_forever()
+        _run_server(port)
 
     p = multiprocessing.Process(target=_run)
     p.start()
