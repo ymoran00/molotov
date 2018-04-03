@@ -59,7 +59,7 @@ def run_server(port=8888):
     start = time.time()
     connected = False
 
-    while time.time() - start < 5 and not connected:
+    while time.time() - start < 10 and not connected:
         try:
             conn = HTTPConnection('localhost', 8888)
             conn.request("GET", "/")
@@ -67,6 +67,7 @@ def run_server(port=8888):
             connected = True
         except Exception:
             time.sleep(.1)
+
     if not connected:
         os.kill(p.pid, signal.SIGTERM)
         p.join(timeout=1.)
