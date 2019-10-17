@@ -66,7 +66,9 @@ class Runner(object):
             global_teardown = get_fixture("global_teardown")
             if global_teardown is not None:
                 try:
-                    global_teardown()
+                    ok, fail = self._results["OK"].value, self._results["FAILED"].value
+                    workers = self._results["WORKER"].value
+                    global_teardown(dict(ok=ok, fail=fail, workers=workers))
                 except Exception as e:
                     # we can't stop the teardown process
                     self.console.print_error(e)

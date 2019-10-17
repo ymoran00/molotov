@@ -294,7 +294,7 @@ class TestFmwk(TestLoop):
             res.append("BYE WORKER")
 
         @global_teardown()
-        def _teardown():
+        def _teardown(results):
             res.append("BYE")
 
         @scenario(weight=100)
